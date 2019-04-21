@@ -16,7 +16,6 @@ TIC_TIMEOUT = 0.1
 ANIM_DIR = 'anim_frames'
 ROCKET_FRAMES_DIR = join(ANIM_DIR, 'rocket')
 GARBAGE_FRAMES_DIR = join(ANIM_DIR, 'garbage')
-spaceship_frame = ''
 
 
 def load_frame_from_file(filename):
@@ -69,28 +68,34 @@ def stars_generator(height, width, number=50):
         yield y_pos, x_pos, symbol
 
 
-async def animate_spaceship(canvas, frames):
-    global spaceship_frame
+async def animate_spaceship(canvas, frames, frame_container):
     frames_cycle = itertools.cycle(frames)
 
     while True:
+        frame_container.clear()
         spaceship_frame = next(frames_cycle)
+        frame_container.append(spaceship_frame)
         await sleep(0.3)
 
 
-async def run_spaceship(canvas, coros, start_row, start_column):
+async def run_spaceship(canvas, coros, start_row, start_col, frame_container):
     height, width = canvas.getmaxyx()
     border_size = symbol_size = 1
 
-    frame_size_y, frame_size_x = get_frame_size(spaceship_frame)
-    frame_pos_x = round(start_column) - round(frame_size_x / 2)
+    frame_size_y, frame_size_x = get_frame_size(frame_container[0])
+    frame_pos_x = round(start_col) - round(frame_size_x / 2)
     frame_pos_y = round(start_row) - round(frame_size_y / 2)
 
     row_speed = column_speed = 0
 
     while True:
-        draw_frame(canvas, frame_pos_y, frame_pos_x,
-                   spaceship_frame, negative=True)
+        draw_frame(
+            canvas,
+            frame_pos_y,
+            frame_pos_x,
+            frame_container[0],
+            negative=True
+        )
 
         await sleep(0.1)
 
@@ -123,7 +128,7 @@ async def run_spaceship(canvas, coros, start_row, start_column):
         frame_pos_x = max(frame_pos_x, border_size)
         frame_pos_y = max(frame_pos_y, border_size)
 
-        draw_frame(canvas, frame_pos_y, frame_pos_x, spaceship_frame)
+        draw_frame(canvas, frame_pos_y, frame_pos_x, frame_container[0])
         canvas.refresh()
 
 
@@ -162,6 +167,7 @@ def run_event_loop(coroutines):
 
 
 def main(canvas):
+    frame_container = []
     curses.curs_set(False)
     canvas.border()
     canvas.nodelay(True)
@@ -180,12 +186,17 @@ def main(canvas):
     rocket_frames = get_frames_list(ROCKET_FRAMES_DIR)
     start_rocket_row = height / 2
     start_rocket_col = width / 2
-    rocket_anim_coro = animate_spaceship(canvas, rocket_frames)
+    rocket_anim_coro = animate_spaceship(
+        canvas,
+        rocket_frames,
+        frame_container
+    )
     rocket_control_coro = run_spaceship(
         canvas,
         coroutines,
         start_rocket_row,
-        start_rocket_col
+        start_rocket_col,
+        frame_container
     )
 
     coroutines.append(rocket_anim_coro)
