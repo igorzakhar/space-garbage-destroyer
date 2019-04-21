@@ -3,17 +3,29 @@ import curses
 import itertools
 import random
 import time
+from os import listdir
+from os.path import isfile, join
 
 from fire_animation import fire
 from curses_tools import draw_frame, get_frame_size, read_controls
 
 
 TIC_TIMEOUT = 0.1
+ANIM_DIR = 'anim_frames'
+ROCKET_FRAMES_DIR = join(ANIM_DIR, 'rocket')
 
 
 def load_frame_from_file(filename):
     with open(filename, 'r') as fd:
         return fd.read()
+
+
+def get_frames_list(dirnames):
+    return [
+        load_frame_from_file(join(dirnames, file))
+        for file in listdir(dirnames)
+        if isfile(join(dirnames, file))
+    ]
 
 
 async def go_to_sleep(seconds):
@@ -127,14 +139,7 @@ def main(canvas):
     coro_shot = fire(canvas, start_row, start_col)
     coroutines.append(coro_shot)
 
-    rocket_frame_1 = load_frame_from_file(
-        'anim_frames/rocket/rocket_frame_1.txt'
-    )
-    rocket_frame_2 = load_frame_from_file(
-        'anim_frames/rocket/rocket_frame_2.txt'
-    )
-
-    rocket_frames = (rocket_frame_1, rocket_frame_2)
+    rocket_frames = get_frames_list(ROCKET_FRAMES_DIR)
 
     start_rocket_row = height / 2
     coro_rocket_anim = animate_frames(
