@@ -10,7 +10,7 @@ from fire_animation import fire
 from curses_tools import draw_frame, get_frame_size, read_controls
 from obstacles import show_obstacles
 from physics import update_speed
-from space_garbage import fly_garbage, obstacles
+from space_garbage import fly_garbage, obstacles_actual, obstacles_in_last_collisions
 
 
 TIC_TIMEOUT = 0.1
@@ -71,7 +71,6 @@ def stars_generator(height, width, number=50):
 
 async def animate_spaceship(canvas, frames, frame_container):
     frames_cycle = itertools.cycle(frames)
-
     while True:
         frame_container.clear()
         spaceship_frame = next(frames_cycle)
@@ -82,21 +81,16 @@ async def animate_spaceship(canvas, frames, frame_container):
 async def run_spaceship(canvas, coros, start_row, start_col, frame_container):
     height, width = canvas.getmaxyx()
     border_size = symbol_size = 1
-
     frame_size_y, frame_size_x = get_frame_size(frame_container[0])
     frame_pos_x = round(start_col) - round(frame_size_x / 2)
     frame_pos_y = round(start_row) - round(frame_size_y / 2)
 
-    row_speed = column_speed = 0
+    row_speed, column_speed = 0, 0
 
     while True:
-        draw_frame(
-            canvas,
-            frame_pos_y,
-            frame_pos_x,
-            frame_container[0],
-            negative=True
-        )
+
+        draw_frame(canvas, frame_pos_y, frame_pos_x,
+                   frame_container[0], negative=True)
 
         await sleep(0.1)
 
@@ -126,10 +120,12 @@ async def run_spaceship(canvas, coros, start_row, start_col, frame_container):
 
         frame_pos_x = min(frame_x_max, field_x_max) - frame_size_x
         frame_pos_y = min(frame_y_max, field_y_max) - frame_size_y
+
         frame_pos_x = max(frame_pos_x, border_size)
         frame_pos_y = max(frame_pos_y, border_size)
 
         draw_frame(canvas, frame_pos_y, frame_pos_x, frame_container[0])
+
         canvas.refresh()
 
 
@@ -180,13 +176,13 @@ def main(canvas):
         for row, column, symbol in stars_generator(height, width)
     ]
 
-
     garbage_frames = get_frames_list(GARBAGE_FRAMES_DIR)
     garbage_coro = fill_orbit_with_garbage(canvas, coroutines, garbage_frames)
 
     rocket_frames = get_frames_list(ROCKET_FRAMES_DIR)
     start_rocket_row = height / 2
     start_rocket_col = width / 2
+
     rocket_anim_coro = animate_spaceship(
         canvas,
         rocket_frames,
@@ -200,7 +196,7 @@ def main(canvas):
         frame_container
     )
 
-    show_obstacles_coro = show_obstacles(canvas, obstacles)
+    show_obstacles_coro = show_obstacles(canvas, obstacles_actual)
 
     coroutines.append(rocket_anim_coro)
     coroutines.append(rocket_control_coro)
