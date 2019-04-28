@@ -31,15 +31,15 @@
 
 Скопировать репозиторий в текущий каталог можно командой:
 ```
-$ git clone https://github.com/igorzakhar/dvmn-async-lesson01.git space
+$ git clone https://github.com/igorzakhar/space-garbage-destroyer.git space_garbage
 ```
-После этого программа будет скопирована в каталог ```/space```.
+После этого программа будет скопирована в каталог ```/space_garbage```.
 
 ## Запуск
 
 Перейти в каталог с программой:
 ```
-$ cd space
+$ cd space_garbage
 ```
 Запуск программы:
 ```
